@@ -1,10 +1,33 @@
-import { useState } from "react";
-import { MapPin } from "lucide-react"; // opcional para ícono decorativo
+import { useEffect, useState } from "react";
+import { MapPin } from "lucide-react";
 import Navbar from "../components/navbar/Navbar";
-import MapaRuta from "../components/mapa/MapaRuta"; // componente que simula el mapa
+import MapaRuta from "../components/mapa/MapaRuta";
+import api from "../service/api";
 
 const IniciarRuta = () => {
   const [rutaIniciada, setRutaIniciada] = useState(false);
+  const [rutaId, setRutaId] = useState(null);
+  const [loadingRuta, setLoadingRuta] = useState(true);
+
+  useEffect(() => {
+    api
+      .get("/asignaciones/conductor")
+      .then((res) => {
+        console.log("→ Asignación recibida:", res.data);
+        const id = res.data?.rutaId;
+        if (id) {
+          setRutaId(id);
+        }
+      })
+      .catch((err) => {
+        console.error("Error al obtener asignación:", err);
+      })
+      .finally(() => {
+        setLoadingRuta(false);
+      });
+  }, []);
+
+  const puedeIniciar = rutaId && !loadingRuta;
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
@@ -18,14 +41,19 @@ const IniciarRuta = () => {
             </h1>
             <button
               onClick={() => setRutaIniciada(true)}
-              className="bg-ecotruck-primary text-white px-8 py-3 rounded-full text-lg font-semibold shadow-md bg-green-600 hover:bg-green-700  animate-pulse"
+              disabled={!puedeIniciar}
+              className={`px-8 py-3 rounded-full text-lg font-semibold shadow-md animate-pulse ${
+                puedeIniciar
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-gray-400 text-gray-200 cursor-not-allowed"
+              }`}
             >
-              Empezar
+              {loadingRuta ? "Cargando ruta..." : "Empezar"}
             </button>
           </div>
         ) : (
           <div className="w-full h-[80vh] mt-0">
-            <MapaRuta />
+            <MapaRuta rutaId={rutaId} />
           </div>
         )}
       </main>

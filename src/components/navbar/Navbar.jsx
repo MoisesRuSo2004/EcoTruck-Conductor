@@ -9,24 +9,37 @@ import {
 } from "@headlessui/react";
 
 import {
-  FaTruck,
-  FaUserTie,
   FaMapMarkedAlt,
-  FaTachometerAlt,
   FaHome,
   FaBullhorn,
   FaRoute,
-  FaCalendarAlt,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import Clock from "../Clock/Clock";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { logout } from "../../service/authService";
 
 const navigation = [
-  { name: "", href: "/Dashboard", icon: FaHome, current: false },
-  { name: "", href: "/iniciarRuta", icon: FaMapMarkedAlt, current: false },
-  { name: "", href: "#", icon: FaRoute, current: false },
-  { name: "", href: "#", icon: FaCalendarAlt, current: false },
-  { name: "", href: "#", icon: FaBullhorn, current: false },
+  { name: "Dashboard", href: "/Dashboard", icon: FaHome, current: false },
+  {
+    name: "Iniciar Ruta",
+    href: "/iniciarRuta",
+    icon: FaMapMarkedAlt,
+    current: false,
+  },
+  { name: "Historial", href: "/historial", icon: FaRoute, current: false },
+  {
+    name: "Comunicados",
+    href: "/comunicados",
+    icon: FaBullhorn,
+    current: false,
+  },
+  {
+    name: "Reportes",
+    href: "/reportes",
+    icon: FaExclamationTriangle,
+    current: false,
+  },
 ];
 
 function classNames(...classes) {
@@ -110,7 +123,7 @@ export default function Navbar() {
                     href="#"
                     className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
                   >
-                    Your profile
+                    Perfil
                   </a>
                 </MenuItem>
                 <MenuItem>
@@ -118,16 +131,19 @@ export default function Navbar() {
                     href="#"
                     className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
                   >
-                    Settings
+                    Ajustes
                   </a>
                 </MenuItem>
                 <MenuItem>
-                  <a
-                    href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                  <button
+                    onClick={() => {
+                      logout();
+                      window.location.href = "/";
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
                   >
-                    Sign out
-                  </a>
+                    Cerrar sesión
+                  </button>
                 </MenuItem>
               </MenuItems>
             </Menu>

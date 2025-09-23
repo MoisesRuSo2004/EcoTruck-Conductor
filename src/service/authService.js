@@ -1,36 +1,63 @@
-import axios from "axios";
-import Login from "../pages/Login";
+// src/services/authService.js
+import api from "./api";
 
-const API_URL = "http://localhost:8080/api/auth"; // Ajusta si usas otro puerto o ruta
-
-// Login
-export const LoginAuth = async (username, password) => {
+// 🔐 Login
+export const LoginAuth = async (correo, password) => {
   try {
-    const response = await axios.post(`${API_URL}/login`, {
-      username,
-      password,
-    });
+    const response = await api.post("/auth/login", { correo, password });
 
     const { token, rol } = response.data;
 
-    // Guardar en localStorage
-    localStorage.setItem("token", token);
-    localStorage.setItem("rol", rol);
+    if (!token || !rol) {
+      throw new Error("Respuesta inválida del servidor");
+    }
 
-    return { token, rol };
+    const rolNormalizado = rol.replace("ROLE_", "");
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("rol", rolNormalizado);
+
+    return { token, rol: rolNormalizado };
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Error en login");
+    const message =
+      error.response?.data?.message ||
+      error.response?.statusText ||
+      "Error al iniciar sesión";
+    throw new Error(message);
   }
 };
 
-// Logout
+// 🔓 Logout
 export const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("rol");
 };
 
-// Obtener token
+// 📦 Utilidades
 export const getToken = () => localStorage.getItem("token");
-
-// Obtener rol
 export const getRol = () => localStorage.getItem("rol");
+
+// 🧠 Extraer datos del token
+export const getUserFromToken = () => {
+  const token = getToken();
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return {
+      correo: payload.sub,
+      rol: payload.rol?.replace("ROLE_", ""),
+      nombre: payload.nombre,
+      exp: payload.exp,
+    };
+  } catch {
+    return null;
+  }
+};
+
+// ⏳ Verificar expiración
+export const isTokenExpired = () => {
+  const user = getUserFromToken();
+  if (!user?.exp) return true;
+  return user.exp * 1000 < Date.now();
+};
