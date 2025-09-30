@@ -4,22 +4,31 @@ import {
   DirectionsRenderer,
   Marker,
 } from "@react-google-maps/api";
-import { getRutaConDirecciones } from "../../service/directionsService";
+import { getRutaById } from "../../service/rutaService";
 import { getDistanciaYTiempo } from "../../service/distanceService";
 import { useEffect, useState } from "react";
-import { getRutaById } from "../../service/rutaService";
 import polyline from "@mapbox/polyline";
 import Indicaciones from "../indicaciones/Indicaciones";
+import { useSimulacion } from "../../context/SimulacionContext";
+import { finalizarRuta } from "../../service/rutaService";
 
 const MapaRuta = ({ rutaId }) => {
   const [mapRef, setMapRef] = useState(null);
-  const [puntosInterpolados, setPuntosInterpolados] = useState([]);
-  const [ubicacion, setUbicacion] = useState(null);
   const [direcciones, setDirecciones] = useState(null);
   const [infoRuta, setInfoRuta] = useState({ distancia: "", duracion: "" });
   const [instrucciones, setInstrucciones] = useState([]);
   const [pasoActual, setPasoActual] = useState(null);
-  const [heading, setHeading] = useState(0); // dirección del camión
+  const [puntosGuardados, setPuntosGuardados] = useState([]);
+
+  const {
+    ubicacion,
+    heading,
+    simulando,
+    rutaActiva,
+    iniciarSimulacion,
+    detenerSimulacion,
+    reiniciarSimulacion,
+  } = useSimulacion();
 
   const containerStyle = {
     width: "100%",
@@ -94,8 +103,8 @@ const MapaRuta = ({ rutaId }) => {
                     .map(([lat, lng]) => ({ lat, lng }))
                 );
 
-                setPuntosInterpolados(puntos);
-                setUbicacion(puntos[0]);
+                setPuntosGuardados(puntos);
+                iniciarSimulacion(puntos);
               } else {
                 console.error("Error en Directions API:", status);
               }
@@ -108,46 +117,20 @@ const MapaRuta = ({ rutaId }) => {
       .catch((err) => console.error("Error al cargar ruta:", err));
   }, [rutaId, isLoaded]);
 
-  // Simulación de movimiento fluido + dirección
   useEffect(() => {
-    if (puntosInterpolados.length === 0) return;
+    if (ubicacion && instrucciones.length > 0) {
+      const destino = instrucciones[instrucciones.length - 1];
+      const destinoCoords = polyline
+        .decode(destino.polyline.points)
+        .slice(-1)[0];
+      const destinoLatLng = { lat: destinoCoords[0], lng: destinoCoords[1] };
 
-    let i = 0;
-    const intervalo = setInterval(() => {
-      if (i < puntosInterpolados.length) {
-        const actual = puntosInterpolados[i];
-        const siguiente = puntosInterpolados[i + 1];
-
-        setUbicacion(actual);
-
-        if (siguiente) {
-          const deltaLat = siguiente.lat - actual.lat;
-          const deltaLng = siguiente.lng - actual.lng;
-          const angulo = Math.atan2(deltaLng, deltaLat) * (180 / Math.PI);
-          const normalizado = (angulo + 360) % 360;
-          setHeading((normalizado + 90) % 360); // ✅ compensar 90° si el ícono apunta al este
-        }
-
-        i++;
-      } else {
-        clearInterval(intervalo);
-      }
-    }, 500);
-
-    return () => clearInterval(intervalo);
-  }, [puntosInterpolados]);
-
-  // Actualizar distancia y duración restante
-  useEffect(() => {
-    if (ubicacion && puntosInterpolados.length > 0) {
-      const destino = puntosInterpolados[puntosInterpolados.length - 1];
-      getDistanciaYTiempo(ubicacion, destino)
+      getDistanciaYTiempo(ubicacion, destinoLatLng)
         .then((info) => setInfoRuta(info))
         .catch((err) => console.error("Error en Distance Matrix:", err));
     }
   }, [ubicacion]);
 
-  // Detectar paso actual
   useEffect(() => {
     if (!ubicacion || instrucciones.length === 0) return;
 
@@ -172,16 +155,22 @@ const MapaRuta = ({ rutaId }) => {
   }, [mapRef, ubicacion, heading]);
 
   if (!isLoaded) return <div className="text-center p-4">Cargando mapa...</div>;
-  if (!rutaId || !ubicacion || puntosInterpolados.length === 0)
+
+  if (!rutaActiva || !ubicacion)
     return (
       <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md text-center">
         <h2 className="text-lg font-semibold text-gray-700 mb-2">
-          Sin ruta asignada
+          Ruta finalizada
         </h2>
-        <p className="text-sm text-gray-500">
-          Este conductor no tiene una ruta activa en este momento. Cuando se
-          asigne una, aparecerá aquí la navegación.
+        <p className="text-sm text-gray-500 mb-4">
+          Puedes iniciar una nueva simulación cuando estés listo.
         </p>
+        <button
+          onClick={() => iniciarSimulacion(puntosGuardados)}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-md"
+        >
+          Empezar ruta
+        </button>
       </div>
     );
 
@@ -208,11 +197,12 @@ const MapaRuta = ({ rutaId }) => {
           icon={{
             url: "/images/truck/truck.png",
             scaledSize: new window.google.maps.Size(60, 60),
-            rotation: heading, // 👈 dirección dinámica
+            rotation: heading,
             anchor: new window.google.maps.Point(20, 20),
           }}
         />
       </GoogleMap>
+
       {/* Tarjeta flotante con info de navegación */}
       <div className="fixed bottom-4 left-4 bg-white p-4 rounded-lg shadow-md z-50">
         <p className="text-sm text-gray-600">
@@ -222,6 +212,25 @@ const MapaRuta = ({ rutaId }) => {
           Tiempo estimado: {infoRuta.duracion}
         </p>
       </div>
+
+      {/* Botón para finalizar ruta */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <button
+          onClick={async () => {
+            try {
+              await finalizarRuta(rutaId);
+              detenerSimulacion();
+              reiniciarSimulacion();
+            } catch (err) {
+              console.error("Error al finalizar ruta:", err);
+            }
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow-md"
+        >
+          Finalizar ruta
+        </button>
+      </div>
+
       {/* Indicaciones paso a paso */}
       <Indicaciones pasoActual={pasoActual} />
     </>
