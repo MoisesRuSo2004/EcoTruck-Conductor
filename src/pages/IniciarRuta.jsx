@@ -33,26 +33,43 @@ const IniciarRuta = () => {
   const handleIniciarRuta = async () => {
     if (!rutaId) {
       console.warn("⚠️ No hay rutaId disponible para iniciar");
+      toast.error("No hay ruta asignada para iniciar");
       return;
     }
+
+    const puntosInterpolados = [
+      { lat: 10.4, lng: -75.5 },
+      { lat: 10.5, lng: -75.6 },
+    ]; // ⚠️ Reemplaza con puntos reales si ya los tienes
 
     console.log("🛰️ Enviando solicitud para iniciar ruta con ID:", rutaId);
     setActivandoRuta(true);
 
     try {
-      const response = await api.post(`/rutas/iniciar/${rutaId}`);
+      const response = await api.post(`/rutas/iniciar/${rutaId}`, {
+        puntosInterpolados,
+      });
+
       console.log("✅ Respuesta del backend:", response);
       toast.success("Ruta iniciada correctamente");
       setRutaIniciada(true);
     } catch (err) {
       console.error("❌ Error al iniciar ruta:", err);
-      console.error("📦 Detalles del error:", {
+      console.log("📦 Detalles del error:", {
         status: err.response?.status,
         data: err.response?.data,
-        headers: err.response?.headers,
         rutaId,
       });
-      toast.error("La ruta ya está activa o hubo un error");
+
+      if (err.response?.status === 400) {
+        toast.error(
+          "⚠️ La ruta no se pudo iniciar. Verifica los puntos enviados."
+        );
+      } else if (err.response?.status === 401) {
+        toast.error("🚫 No tienes permisos para iniciar esta ruta.");
+      } else {
+        toast.error("❌ Error inesperado al iniciar la ruta.");
+      }
     } finally {
       setActivandoRuta(false);
     }
