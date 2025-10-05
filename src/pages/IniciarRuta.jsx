@@ -80,7 +80,7 @@ const IniciarRuta = () => {
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <Navbar />
-      <main className="flex flex-col items-center justify-center p-6">
+      <main className="flex flex-col items-center justify-center p-0">
         {!rutaIniciada ? (
           <div className="text-center space-y-6 mt-30">
             <MapPin className="mx-auto text-ecotruck-primary size-15 animate-bounce" />
@@ -104,7 +104,7 @@ const IniciarRuta = () => {
             </button>
           </div>
         ) : (
-          <div className="w-full h-[80vh] mt-0">
+          <div className="w-full h-[85vh] mt-0">
             <MapaRuta rutaId={rutaId} />
           </div>
         )}
