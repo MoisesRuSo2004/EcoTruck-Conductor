@@ -29,7 +29,6 @@ jobs:
       - name: Upload dist folder for deployment
         uses: actions/upload-artifact@v4
         with:
-          name: dist-folder
           path: dist
 
   deploy:
@@ -43,12 +42,7 @@ jobs:
       - name: Download dist folder from build job
         uses: actions/download-artifact@v4
         with:
-          name: dist-folder
-
-      - name: Move downloaded artifact to ./dist
-        run: |
-          rm -rf dist
-          mv dist-folder dist
+          path: dist
 
       - name: Login to Azure
         uses: azure/login@v2
