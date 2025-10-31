@@ -61,5 +61,6 @@ jobs:
         with:
           app-name: 'conductoresecotruck'
           slot-name: 'Production'
-          package: .
+          package: ./dist
+
           
