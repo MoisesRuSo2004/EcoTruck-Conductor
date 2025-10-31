@@ -11,6 +11,7 @@ export default defineConfig({
   },
   build: {
     outDir: "dist", // Carpeta que Azure debe servir
+    assetsDir: "assets", // Carpeta para imágenes, fuentes, etc.
     sourcemap: false, // Puedes activarlo si necesitas debug en producción
   },
   resolve: {
