@@ -24,7 +24,7 @@ function App() {
           path="/iniciarRuta"
           element={
             <PrivateRoute>
-              <IniciarRuta />
+              <IniciarRuta key={Date.now()} />
             </PrivateRoute>
           }
         />

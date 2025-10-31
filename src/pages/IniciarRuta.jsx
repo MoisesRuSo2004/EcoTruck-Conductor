@@ -4,33 +4,48 @@ import Navbar from "../components/navbar/Navbar";
 import MapaRuta from "../components/mapa/MapaRuta";
 import api from "../service/api";
 import toast from "react-hot-toast";
+import MapaConductor from "../components/mapa/MapaConductor";
+import { useSimulacion } from "../context/SimulacionContext";
 
 const IniciarRuta = () => {
   const [rutaIniciada, setRutaIniciada] = useState(false);
   const [rutaId, setRutaId] = useState(null);
   const [loadingRuta, setLoadingRuta] = useState(true);
   const [activandoRuta, setActivandoRuta] = useState(false);
+  const { ubicacion, heading } = useSimulacion();
+
+  console.log("🧭 Render IniciarRuta");
+  console.log("📍 ubicacion:", ubicacion);
+  console.log("🧭 heading:", heading);
+  console.log("📦 rutaId:", rutaId);
+  console.log("🔄 rutaIniciada:", rutaIniciada);
 
   useEffect(() => {
+    console.log("📡 Solicitando asignación de ruta...");
     api
       .get("/asignaciones/conductor")
       .then((res) => {
         console.log("→ Asignación recibida:", res.data);
         const id = res.data?.rutaId;
         if (id) {
+          console.log("✅ rutaId asignado:", id);
           setRutaId(id);
+        } else {
+          console.warn("⚠️ No se recibió rutaId en la asignación");
         }
       })
       .catch((err) => {
-        console.error("Error al obtener asignación:", err);
+        console.error("❌ Error al obtener asignación:", err);
         toast.error("No se pudo cargar la ruta asignada");
       })
       .finally(() => {
+        console.log("⏳ Finalizando carga de ruta...");
         setLoadingRuta(false);
       });
   }, []);
 
   const handleIniciarRuta = async () => {
+    console.log("🟢 handleIniciarRuta ejecutado");
     if (!rutaId) {
       console.warn("⚠️ No hay rutaId disponible para iniciar");
       toast.error("No hay ruta asignada para iniciar");
@@ -71,11 +86,13 @@ const IniciarRuta = () => {
         toast.error("❌ Error inesperado al iniciar la ruta.");
       }
     } finally {
+      console.log("⏹️ Finalizando activación...");
       setActivandoRuta(false);
     }
   };
 
   const puedeIniciar = rutaId && !loadingRuta && !activandoRuta;
+  console.log("🧮 puedeIniciar:", puedeIniciar);
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
@@ -105,7 +122,11 @@ const IniciarRuta = () => {
           </div>
         ) : (
           <div className="w-full h-[85vh] mt-0">
-            <MapaRuta rutaId={rutaId} />
+            <MapaConductor
+              rutaId={rutaId}
+              ubicacion={ubicacion}
+              heading={heading}
+            />
           </div>
         )}
       </main>
