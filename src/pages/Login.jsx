@@ -1,89 +1,96 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LoginAuth } from "../service/authService"; // ✅ si el archivo está ahí
+import { LoginAuth } from "../service/authService";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // 👁️ estado para ver/ocultar
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
 
-  // 🔹 Frases dinámicas
   const frases = [
     "Listo para la ruta. Inicia sesión y ponte en marcha!",
     "Tu dashboard de conductor te espera. ¡Comienza a conducir!",
     "Optimiza tu jornada. Accede a tu cuenta y arranca!",
     "Conduce con confianza. Tu próxima ruta está lista para ti",
   ];
+
   const [index, setIndex] = useState(0);
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setAnimating(true); // activa animación de salida
+      setAnimating(true);
       setTimeout(() => {
         setIndex((prev) => (prev + 1) % frases.length);
-        setAnimating(false); // vuelve a entrar
-      }, 500); // tiempo de salida
-    }, 5000); // cambia cada 5 segundos
+        setAnimating(false);
+      }, 500);
+    }, 5000);
     return () => clearInterval(interval);
-  }, [frases.length]);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const { token, rol } = await LoginAuth(correo, password);
-      console.log("Login exitoso:", token, rol);
+    setSubmitted(true);
 
-      // Redirigir según rol
-      if (rol === "CONDUCTOR") {
-        navigate("/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
+    if (!correo || !password) return;
+
+    try {
+      await LoginAuth(correo, password);
+      navigate("/dashboard");
     } catch (error) {
-      alert("Credenciales inválidas o error de conexión");
+      alert("Credenciales inválidas o error en la conexión");
     }
   };
 
   return (
-    <div className="h-screen overflow-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-2">
-      {/* Columna izquierda */}
-      <div className="hidden lg:block">
-        <div className="h-screen bg-gradient-to-br from-[#2b551f] to-[#387228] overflow-hidden">
-          <img
-            src="/images/img/Conductor.png"
-            alt="Conductor EcoTruck"
-            className="w-full h-full object-cover"
-          />
-        </div>
+    <div className="relative min-h-screen grid grid-cols-1 lg:grid-cols-2">
+
+      {/* Fondo móvil difuminado */}
+      <div
+        className="absolute inset-0 lg:hidden"
+        style={{
+          backgroundImage: "url('/images/img/Conductor.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "blur(4px) brightness(0.55)",
+        }}
+      ></div>
+
+      <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-black/40 to-black/10"></div>
+
+      {/* Imagen Desktop */}
+      <div className="hidden lg:block relative">
+        <img
+          src="/images/img/Conductor.png"
+          className="w-full h-full object-cover"
+          alt="Conductor"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/35 to-transparent"></div>
       </div>
 
-      {/* Columna derecha */}
-      <div className="flex items-start justify-center bg-[#f9fafb] h-full py-8 lg:py-12">
-        <div className="w-full max-w-lg rounded-2xl bg-white/80 backdrop-blur-md shadow-2xl px-6 pb-6 pt-2 lg:px-8 lg:pb-8 lg:pt-4 space-y-6">
-          {/* Logo */}
-          <div className="text-center ">
+      {/* Formulario */}
+      <div className="flex items-center justify-center px-6 py-10 relative z-10">
+        <div className="w-full max-w-lg rounded-2xl p-8 bg-white/40 backdrop-blur-xl shadow-[0_0_50px_-10px_rgba(0,0,0,0.35)] border border-white/50 animate-fadeInUp">
+
+          {/* Logo con animación */}
+          <div className="text-center mb-4 animate-softDrop">
             <img
-              src="/images/logo/logo-dos.svg"
+              src="/images/logo/LogoEcoTruck.svg"
+              className="mx-auto h-32 md:h-44 transition-all duration-500 hover:scale-110 hover:rotate-3 hover:drop-shadow-[0_0_18px_rgba(82,255,82,0.45)] floating-logo"
               alt="EcoTruck"
-              className="mx-auto h-48 md:h-56 w-auto -mb-16"
             />
           </div>
 
-          {/* Encabezado con frases dinámicas */}
-          <div className="text-center  space-y-1">
-            <h2 className="text-xl lg:text-3xl font-extrabold text-gray-900">
-              Iniciar sesión
-            </h2>
-
-            <div className="h-6 overflow-hidden relative">
+          {/* Texto dinámico */}
+          <div className="text-center space-y-1 mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Iniciar sesión</h2>
+            <div className="h-6 overflow-hidden">
               <p
-                className={`text-base text-gray-600 font-medium transition-transform duration-800 ease-in-out ${
-                  animating
-                    ? "translate-y-6 opacity-0"
-                    : "translate-y-0 opacity-100"
+                className={`text-sm md:text-base text-gray-700 transition-all duration-700 ${
+                  animating ? "translate-y-6 opacity-0" : "translate-y-0 opacity-100"
                 }`}
               >
                 {frases[index]}
@@ -91,61 +98,78 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Formulario */}
           <form className="space-y-4" onSubmit={handleSubmit}>
             {/* Correo */}
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-600" />
               <input
-                id="correo"
-                name="correo"
                 type="email"
-                required
                 placeholder="Correo electrónico"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
-                className="pl-10 w-full rounded-xl border border-gray-300 bg-white py-2 text-gray-700 placeholder-gray-400 focus:border-[#2b551f] focus:ring-[#2b551f] outline-none shadow-sm"
+                className={`pl-10 w-full rounded-xl bg-white text-gray-800 placeholder-gray-500 border py-3 outline-none shadow-sm
+                  ${submitted && !correo ? "border-red-400" : "border-gray-300 focus:border-green-600"}`}
               />
             </div>
 
-            {/* Contraseña con ojito */}
+            {/* Password */}
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-600" />
               <input
-                id="password"
-                name="password"
                 type={showPassword ? "text" : "password"}
-                required
                 placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 pr-10 w-full rounded-xl border border-gray-300 bg-white py-2 text-gray-700 placeholder-gray-400 focus:border-[#2b551f] focus:ring-[#2b551f] outline-none shadow-sm"
+                className={`pl-10 pr-10 w-full rounded-xl bg-white text-gray-800 placeholder-gray-500 border py-3 outline-none shadow-sm
+                  ${submitted && !password ? "border-red-400" : "border-gray-300 focus:border-green-600"}`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-3 text-gray-600 hover:text-gray-800"
               >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
+                {showPassword ? <EyeOff /> : <Eye />}
               </button>
             </div>
 
             {/* Botón */}
-            <div>
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-gradient-to-r from-[#2b551f] to-[#387228] py-3 text-white font-semibold shadow-md hover:scale-105 transition"
-              >
-                Iniciar sesión
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="w-full rounded-xl py-3 font-semibold text-white shadow-lg
+              bg-gradient-to-r from-green-700 to-lime-600 hover:brightness-110 hover:shadow-[0_0_18px_4px_rgba(82,255,82,0.35)] transition-all"
+            >
+              Iniciar sesión
+            </button>
           </form>
         </div>
       </div>
     </div>
   );
 }
+
+/* Animaciones */
+<style>
+{`
+.animate-fadeInUp { animation: fadeInUp 0.8s ease-out; }
+.animate-softDrop { animation: softDrop 1s ease-out; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes softDrop {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🌿 Animación flotante del logo */
+.floating-logo {
+  animation: floating 4s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+`}
+</style>
