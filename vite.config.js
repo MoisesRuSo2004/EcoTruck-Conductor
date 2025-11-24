@@ -20,6 +20,7 @@ export default defineConfig({
     },
   },
   define: {
+    global: {}, // Evita errores con librerías que esperan global
     "process.env": {}, // Evita errores con librerías que esperan process.env
   },
 });

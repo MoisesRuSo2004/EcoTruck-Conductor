@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { enviarPrediccionDesdeConductor } from "../../service/prediccionService";
 
 export default function FormularioVehiculo({ onClose, onSubmit }) {
   const [form, setForm] = useState({
@@ -14,12 +15,28 @@ export default function FormularioVehiculo({ onClose, onSubmit }) {
   });
 
   const zonas = [
-    "Zona 1", "Zona 2", "Zona 3", "Zona 4", "Zona 5", "Zona 6",
-    "Zona 7", "Zona 8", "Zona 9", "Zona 10", "Zona 11", "Zona 12",
+    "Zona 1",
+    "Zona 2",
+    "Zona 3",
+    "Zona 4",
+    "Zona 5",
+    "Zona 6",
+    "Zona 7",
+    "Zona 8",
+    "Zona 9",
+    "Zona 10",
+    "Zona 11",
+    "Zona 12",
   ];
 
   const diasSemana = [
-    "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo",
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo",
   ];
 
   const handleChange = (e) => {
@@ -31,10 +48,38 @@ export default function FormularioVehiculo({ onClose, onSubmit }) {
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
-  const handleSubmit = (e) => {
+  const normalizarDatos = (form) => {
+    return {
+      ...form,
+      zona: form.zona.replace(" ", ""), // "Zona 1" → "Zona1"
+      dia_semana: traducirDia(form.dia_semana), // "Lunes" → "Monday"
+    };
+  };
+
+  const traducirDia = (dia) => {
+    const mapa = {
+      Lunes: "Monday",
+      Martes: "Tuesday",
+      Miércoles: "Wednesday",
+      Jueves: "Thursday",
+      Viernes: "Friday",
+      Sábado: "Saturday",
+      Domingo: "Sunday",
+    };
+    return mapa[dia] || dia;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(form);
-    onClose();
+    try {
+      const datos = normalizarDatos(form);
+      const resultado = await enviarPrediccionDesdeConductor(datos);
+      console.log("✅ Predicción generada:", resultado);
+      onSubmit(form); // opcional para historial local
+      onClose();
+    } catch (err) {
+      console.error("❌ Error al enviar predicción:", err);
+    }
   };
 
   return (
@@ -47,7 +92,6 @@ export default function FormularioVehiculo({ onClose, onSubmit }) {
 
       {/* Bottom Sheet */}
       <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-50 p-6 max-h-[85vh] overflow-y-auto animate-[slideUp_0.28s_ease]">
-
         <div className="flex justify-center mb-4">
           <div className="w-12 h-1.5 rounded-full bg-gray-300"></div>
         </div>
@@ -57,7 +101,6 @@ export default function FormularioVehiculo({ onClose, onSubmit }) {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
           <div>
             <label className="label">Kilometraje actual</label>
             <input
@@ -101,18 +144,29 @@ export default function FormularioVehiculo({ onClose, onSubmit }) {
 
           <div>
             <label className="label">Tipo de fallo (si lo hubo)</label>
-            <input
-              type="text"
+            <select
               name="tipo_fallo"
-              className="input"
-              placeholder="Motor, Frenos, Suspensión..."
+              value={form.tipo_fallo}
               onChange={handleChange}
-            />
+              className="input"
+              required
+            >
+              <option value="">Seleccionar</option>
+              <option value="Electrico">Eléctrico</option>
+              <option value="Mecanico">Mecánico</option>
+              <option value="Neumatico">Neumático</option>
+              <option value="Otro">Otro</option>
+            </select>
           </div>
 
           <div>
             <label className="label">Condición de la vía</label>
-            <select name="condicion_via" className="input" onChange={handleChange} required>
+            <select
+              name="condicion_via"
+              className="input"
+              onChange={handleChange}
+              required
+            >
               <option value="">Seleccionar</option>
               <option>Buena</option>
               <option>Regular</option>
@@ -122,7 +176,12 @@ export default function FormularioVehiculo({ onClose, onSubmit }) {
 
           <div>
             <label className="label">Zona</label>
-            <select name="zona" className="input" onChange={handleChange} required>
+            <select
+              name="zona"
+              className="input"
+              onChange={handleChange}
+              required
+            >
               <option value="">Seleccionar</option>
               {zonas.map((z) => (
                 <option key={z}>{z}</option>
@@ -146,7 +205,12 @@ export default function FormularioVehiculo({ onClose, onSubmit }) {
 
           <div>
             <label className="label">Día de la semana</label>
-            <select name="dia_semana" className="input" onChange={handleChange} required>
+            <select
+              name="dia_semana"
+              className="input"
+              onChange={handleChange}
+              required
+            >
               <option value="">Seleccionar</option>
               {diasSemana.map((d) => (
                 <option key={d}>{d}</option>
@@ -155,18 +219,11 @@ export default function FormularioVehiculo({ onClose, onSubmit }) {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-cancel"
-            >
+            <button type="button" onClick={onClose} className="btn-cancel">
               Cancelar
             </button>
 
-            <button
-              type="submit"
-              className="btn-submit"
-            >
+            <button type="submit" className="btn-submit">
               Enviar Reporte
             </button>
           </div>
