@@ -3,7 +3,8 @@ import axios from "axios";
 
 // 🔧 Instancia base de Axios
 const api = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL:
+    "https://ecotruck-dkfvh6e5brhqc6h5.brazilsouth-01.azurewebsites.net/api",
   headers: {
     "Content-Type": "application/json",
   },
