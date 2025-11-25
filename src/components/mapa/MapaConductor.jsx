@@ -35,7 +35,7 @@ const MapaConductor = ({ rutaId, ubicacion, heading }) => {
   } = useSimulacion();
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyA4cpX2UWFERFOLEWasaZo8cePYke-G1W0",
+    googleMapsApiKey: "AIzaSyAi7XpbNYSQskmVG6bVP2GEodLs8I4MDUI",
     language: "es",
     region: "CO",
   });
